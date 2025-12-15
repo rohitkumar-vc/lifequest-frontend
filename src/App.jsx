@@ -30,6 +30,11 @@ function App() {
                         <Route path="/setup-password" element={<SetupPassword />} />
                         
                         {/* Protected Routes wrapped in Layout */}
+import NotFoundPage from './pages/NotFoundPage';
+
+// ... existing imports ...
+
+// Inside component
                         <Route element={<ProtectedRoute />}>
                             <Route element={<Layout />}>
                                 <Route path="/" element={<Dashboard />} />
@@ -41,6 +46,9 @@ function App() {
                                 <Route path="/admin" element={<AdminDashboard />} />
                             </Route>
                         </Route>
+
+                        {/* 404 Route */}
+                        <Route path="*" element={<NotFoundPage />} />
                     </Routes>
                 </GameProvider>
             </AuthProvider>

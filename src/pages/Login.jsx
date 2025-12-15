@@ -1,7 +1,4 @@
-import React, { useState } from 'react';
-import { useAuth } from '../context/AuthProvider';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useToast } from '../components/ui/Toast';
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -9,15 +6,17 @@ const Login = () => {
     const [rememberMe, setRememberMe] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
-    const [error, setError] = useState('');
+    const { toast } = useToast();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             await login(username, password, rememberMe);
+            toast.success('Welcome back, adventurer!');
             navigate('/');
         } catch (err) {
-            setError('Invalid credentials');
+            console.error("Login error:", err);
+            toast.error(err.response?.data?.detail || 'Invalid credentials');
         }
     };
 
@@ -35,11 +34,6 @@ const Login = () => {
                     <p className="text-gray-400 mt-2">Enter the realm</p>
                 </div>
 
-                {error && (
-                    <div className="bg-red-500/10 text-red-400 p-3 rounded mb-4 text-sm text-center">
-                        {error}
-                    </div>
-                )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>

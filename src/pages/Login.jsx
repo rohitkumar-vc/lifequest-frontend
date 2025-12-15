@@ -1,3 +1,7 @@
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthProvider';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useToast } from '../components/ui/Toast';
 
 const Login = () => {

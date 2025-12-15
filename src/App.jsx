@@ -14,6 +14,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import SetupPassword from './pages/SetupPassword';
 import Layout from './components/Layout';
 
+import NotFoundPage from './pages/NotFoundPage';
+
 const ProtectedRoute = () => {
     const { user, loading } = useAuth();
     if (loading) return <div className="min-h-screen bg-bg-dark flex items-center justify-center text-white">Loading...</div>;
@@ -30,11 +32,7 @@ function App() {
                         <Route path="/setup-password" element={<SetupPassword />} />
                         
                         {/* Protected Routes wrapped in Layout */}
-import NotFoundPage from './pages/NotFoundPage';
 
-// ... existing imports ...
-
-// Inside component
                         <Route element={<ProtectedRoute />}>
                             <Route element={<Layout />}>
                                 <Route path="/" element={<Dashboard />} />

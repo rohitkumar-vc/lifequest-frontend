@@ -8,19 +8,36 @@ const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
         try {
             await login(username, password, rememberMe);
             toast.success('Welcome back, adventurer!');
             navigate('/');
         } catch (err) {
             console.error("Login error:", err);
-            toast.error(err.response?.data?.detail || 'Invalid credentials');
+            let errorMessage = 'Invalid credentials';
+            
+            if (err.response) {
+                // Server responded with an error (e.g., 401)
+                errorMessage = err.response.data?.detail || 'Invalid credentials';
+            } else if (err.request) {
+                // Request made but no response (Server down/Network issue)
+                errorMessage = 'Server unreachable. Please check your connection.';
+            } else {
+                // Something else happened
+                errorMessage = err.message || 'An unexpected error occurred.';
+            }
+            
+            toast.error(errorMessage);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -76,9 +93,17 @@ const Login = () => {
                     
                     <button 
                         type="submit"
-                        className="w-full bg-brand-primary hover:bg-pink-600 text-white font-bold py-3 rounded-lg transition-all transform active:scale-95"
+                        disabled={isLoading}
+                        className="w-full bg-brand-primary hover:bg-pink-600 text-white font-bold py-3 rounded-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Login
+                        {isLoading ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                <span>Logging In...</span>
+                            </>
+                        ) : (
+                            'Login'
+                        )}
                     </button>
                     
                     <div className="text-center text-xs text-gray-500 mt-4">

@@ -25,6 +25,11 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
+        // Skip interceptor logic for login requests to avoid infinite loops or reloads
+        if (originalRequest.url.includes('/auth/login')) {
+            return Promise.reject(error);
+        }
+
         // If error is 401 and we haven't retried yet
         if (error.response && error.response.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
@@ -57,12 +62,16 @@ api.interceptors.response.use(
                     console.error("Session expired", refreshError);
                     localStorage.removeItem('token');
                     localStorage.removeItem('refresh_token');
-                    window.location.href = '/login';
+                    if (window.location.pathname !== '/login') {
+                        window.location.href = '/login';
+                    }
                 }
             } else {
                 // No refresh token available
                 localStorage.removeItem('token');
-                window.location.href = '/login';
+                if (window.location.pathname !== '/login') {
+                    window.location.href = '/login';
+                }
             }
         }
         return Promise.reject(error);

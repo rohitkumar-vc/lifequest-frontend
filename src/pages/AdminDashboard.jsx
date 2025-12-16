@@ -14,6 +14,7 @@ const AdminDashboard = () => {
     // Form States
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteUsername, setInviteUsername] = useState('');
+    const [inviteFullName, setInviteFullName] = useState('');
     
     const [itemName, setItemName] = useState('');
     const [itemCost, setItemCost] = useState(10);
@@ -28,14 +29,16 @@ const AdminDashboard = () => {
         try {
             await api.post('/auth/admin/register-user', { 
                 email: inviteEmail, 
-                username: inviteUsername 
+                username: inviteUsername,
+                full_name: inviteFullName
             });
-            addToast(`Invitation sent to ${inviteEmail}`, 'success');
+            addToast(`User ${inviteUsername} created!`, 'success');
             setInviteOpen(false);
             setInviteEmail('');
             setInviteUsername('');
+            setInviteFullName('');
         } catch (error) {
-            addToast(error.response?.data?.detail || 'Failed to invite user', 'error');
+            addToast(error.response?.data?.detail || 'Failed to create user', 'error');
         } finally {
             setLoading(false);
         }
@@ -96,8 +99,12 @@ const AdminDashboard = () => {
             {/* --- Modals --- */}
             
             {/* Invite Modal */}
-            <Modal isOpen={isInviteOpen} onClose={() => setInviteOpen(false)} title="Invite User">
+            <Modal isOpen={isInviteOpen} onClose={() => setInviteOpen(false)} title="Create New User">
                 <form onSubmit={handleInvite} className="space-y-4">
+                    <div>
+                        <label className="block text-sm text-gray-400 mb-1">Full Name</label>
+                        <input className="w-full bg-black/20 border border-gray-700 rounded p-2 text-white" value={inviteFullName} onChange={e => setInviteFullName(e.target.value)} required />
+                    </div>
                     <div>
                         <label className="block text-sm text-gray-400 mb-1">Username</label>
                         <input className="w-full bg-black/20 border border-gray-700 rounded p-2 text-white" value={inviteUsername} onChange={e => setInviteUsername(e.target.value)} required />
@@ -107,7 +114,7 @@ const AdminDashboard = () => {
                         <input type="email" className="w-full bg-black/20 border border-gray-700 rounded p-2 text-white" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} required />
                     </div>
                     <button disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-2 rounded font-bold">
-                        {loading ? 'Sending...' : 'Send Invitation'}
+                        {loading ? 'Creating...' : 'Create User'}
                     </button>
                 </form>
             </Modal>

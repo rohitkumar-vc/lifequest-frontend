@@ -54,15 +54,16 @@ const TaskCard = ({ task, onComplete, onDelete }) => {
                         <Trash2 className="w-5 h-5" />
                     </button>
 
-                    {!isCompleted && !isExpired && (
+                    {/* Checkbox / Completion Toggle */}
+                    {!isExpired && (
                         <button 
                             onClick={(e) => { e.stopPropagation(); onComplete(task._id); }}
-                            className="text-gray-500 hover:text-green-500 transition-colors"
+                            className={`transition-colors ${isCompleted ? 'text-green-500 hover:text-gray-400' : 'text-gray-500 hover:text-green-500'}`}
+                            title={isCompleted ? "Click to Undo" : "Complete Task"}
                         >
-                            <Circle className="w-6 h-6" />
+                            {isCompleted ? <CheckCircle className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
                         </button>
                     )}
-                     {isCompleted && <CheckCircle className="w-6 h-6 text-green-500" />}
                      {isExpired && <Skull className="w-6 h-6 text-red-500" />}
                 </div>
             </div>

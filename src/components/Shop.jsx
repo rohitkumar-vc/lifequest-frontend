@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameProvider';
 import { useAuth } from '../context/AuthProvider';
-import { ShoppingBag, Shield, Heart, Trash2 } from 'lucide-react';
+import { ShoppingBag, Shield, Heart, Trash2, Receipt, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Modal from './ui/Modal';
 import { useToast } from './ui/Toast';
+import api from '../api/axios';
 
 const Shop = () => {
     const { shopItems, buyItem, deleteShopItem } = useGame();
@@ -14,6 +15,24 @@ const Shop = () => {
     const [isBuying, setIsBuying] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    
+    // History State
+    const [isHistoryOpen, setHistoryOpen] = useState(false);
+    const [history, setHistory] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+
+    const fetchHistory = async () => {
+        setHistoryOpen(true);
+        setHistoryLoading(true);
+        try {
+            const res = await api.get('/shop/history');
+            setHistory(res.data);
+        } catch (error) {
+            addToast("Failed to load history", "error");
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
 
     const handleBuyClick = (item) => {
         setSelectedItem(item);
@@ -55,9 +74,18 @@ const Shop = () => {
 
     return (
         <div className="bg-card-dark border border-white/10 rounded-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-                 <ShoppingBag className="w-6 h-6 text-amber-400" />
-                 <h2 className="text-xl font-bold text-white">Merchant</h2>
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                     <ShoppingBag className="w-6 h-6 text-amber-400" />
+                     <h2 className="text-xl font-bold text-white">Merchant</h2>
+                </div>
+                <button 
+                    onClick={fetchHistory}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-gray-300 transition-colors border border-white/5"
+                >
+                    <Receipt className="w-4 h-4" />
+                    <span className="hidden sm:inline">History</span>
+                </button>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -168,6 +196,51 @@ const Shop = () => {
                         </div>
                     </div>
                 )}
+            </Modal>
+            
+            {/* History Modal */}
+            <Modal
+                isOpen={isHistoryOpen}
+                onClose={() => setHistoryOpen(false)}
+                title="Purchase History"
+            >
+                <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                    {historyLoading ? (
+                        <div className="text-center py-8 text-gray-500">Loading records...</div>
+                    ) : history.length > 0 ? (
+                        <div className="space-y-3">
+                            {history.map((record) => (
+                                <div key={record.id} className="bg-black/20 p-3 rounded-lg border border-white/5 flex items-center justify-between">
+                                    <div>
+                                        <div className="font-bold text-white text-sm">{record.item_name}</div>
+                                        <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                            <Clock className="w-3 h-3" />
+                                            {new Date(record.purchased_at.endsWith('Z') ? record.purchased_at : record.purchased_at + 'Z').toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
+                                        -{record.cost}
+                                        <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center">
+                                            <span className="text-[10px]">G</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-gray-500">
+                            No purchases yet. Time to spend some gold!
+                        </div>
+                    )}
+                </div>
+                <div className="mt-6 pt-4 border-t border-white/10 text-center">
+                    <button 
+                        onClick={() => setHistoryOpen(false)}
+                        className="text-gray-400 hover:text-white text-sm"
+                    >
+                        Close Receipt
+                    </button>
+                </div>
             </Modal>
         </div>
     );

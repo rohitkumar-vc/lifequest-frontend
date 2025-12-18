@@ -3,7 +3,7 @@ import Modal from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 import { useAuth } from '../context/AuthProvider';
 import api from '../api/axios';
-import { Plus, UserPlus, ShieldCheck, Users, Ban, CheckCircle, Crown } from 'lucide-react';
+import { Plus, UserPlus, ShieldCheck, Users, Ban, CheckCircle, Crown, Search, Filter, Receipt, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const AdminDashboard = () => {
@@ -29,7 +29,18 @@ const AdminDashboard = () => {
 
     // -- User Management Tab States --
     const [users, setUsers] = useState([]);
-    
+    const [searchQuery, setSearchQuery] = useState('');
+    const [roleFilter, setRoleFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
+
+    // -- History Modal State --
+    const [historyState, setHistoryState] = useState({
+        isOpen: false,
+        userName: '',
+        data: [],
+        loading: false
+    });
+
     // ... (fetch logic)
 
     // Fetch Users when switching to 'users' tab
@@ -47,6 +58,32 @@ const AdminDashboard = () => {
             addToast('Failed to load users', 'error');
         }
     };
+
+    const fetchUserHistory = async (userId, userName) => {
+        setHistoryState({ isOpen: true, userName, data: [], loading: true });
+        try {
+            const res = await api.get(`/shop/admin/history/${userId}`);
+            setHistoryState(prev => ({ ...prev, data: res.data, loading: false }));
+        } catch (error) {
+            addToast("Failed to fetch user history", "error");
+            setHistoryState(prev => ({ ...prev, isOpen: false, loading: false }));
+        }
+    };
+
+    // Filter Logic
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = (
+            user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (user.full_name && user.full_name.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+        const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+        // Determine effective status for filtering
+        const effectiveStatus = user.status || (user.is_active ? 'active' : 'inactive');
+        const matchesStatus = statusFilter === 'all' || effectiveStatus === statusFilter;
+
+        return matchesSearch && matchesRole && matchesStatus;
+    });
 
     const handleInvite = async (e) => {
         e.preventDefault();
@@ -129,6 +166,8 @@ const AdminDashboard = () => {
     const onRoleClick = (userId, currentRole) => {
         const newRole = currentRole === 'admin' ? 'user' : 'admin';
         const action = currentRole === 'admin' ? 'Demote' : 'Promote';
+        if (userId === currentUser._id) return; // double check
+
         openConfirmModal(
             'role', 
             userId, 
@@ -158,6 +197,8 @@ const AdminDashboard = () => {
         const newStatus = effectiveStatus === 'active' || effectiveStatus === 'invited' ? 'inactive' : 'active';
         const action = newStatus === 'active' ? 'Activate' : 'Disable';
         
+        if (userId === currentUser._id) return; // double check
+
         openConfirmModal(
             'status',
             userId,
@@ -218,10 +259,48 @@ const AdminDashboard = () => {
                 </div>
             ) : (
                 <div className="bg-card-dark border border-white/5 rounded-2xl overflow-hidden">
-                    <div className="p-6 border-b border-white/5">
+                    <div className="p-6 border-b border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
                         <h2 className="text-xl font-bold text-white flex items-center gap-2">
                             <Users className="w-5 h-5 text-indigo-400" /> User Registry
                         </h2>
+                        
+                        {/* Filter & Search Bar */}
+                        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                            {/* Search */}
+                            <div className="relative">
+                                <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <input 
+                                    type="text"
+                                    placeholder="Search users..."
+                                    className="w-full md:w-64 pl-9 pr-4 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                            
+                            {/* Role Filter */}
+                            <select 
+                                className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-indigo-500/50"
+                                value={roleFilter}
+                                onChange={(e) => setRoleFilter(e.target.value)}
+                            >
+                                <option value="all">All Roles</option>
+                                <option value="admin">Admin</option>
+                                <option value="user">User</option>
+                            </select>
+
+                            {/* Status Filter */}
+                            <select 
+                                className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-gray-300 focus:outline-none focus:border-indigo-500/50"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="all">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="invited">Invited</option>
+                            </select>
+                        </div>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left min-w-[800px]">
@@ -235,7 +314,7 @@ const AdminDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5 text-sm">
-                                {users.map(user => {
+                                {filteredUsers.map(user => {
                                     const isMe = currentUser?._id === user._id || currentUser?.id === user._id || currentUser?.username === user.username;
                                     const effectiveStatus = user.status || (user.is_active ? 'active' : 'inactive');
 
@@ -266,6 +345,13 @@ const AdminDashboard = () => {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
+                                                    <button 
+                                                        onClick={() => fetchUserHistory(user._id, user.username)}
+                                                        className="p-2 rounded transition-colors hover:bg-white/10 text-gray-400 hover:text-amber-400"
+                                                        title="View Purchase History"
+                                                    >
+                                                        <Receipt className="w-4 h-4" />
+                                                    </button>
                                                     <button 
                                                         onClick={() => onRoleClick(user._id, user.role)}
                                                         disabled={isMe}
@@ -364,6 +450,43 @@ const AdminDashboard = () => {
                         </button>
                     </div>
                  </div>
+            </Modal>
+
+            {/* History Modal */}
+            <Modal
+                isOpen={historyState.isOpen}
+                onClose={() => setHistoryState(prev => ({ ...prev, isOpen: false }))}
+                title={`History: ${historyState.userName}`}
+            >
+                <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                    {historyState.loading ? (
+                        <div className="text-center py-8 text-gray-500">Loading records...</div>
+                    ) : historyState.data.length > 0 ? (
+                        <div className="space-y-3">
+                            {historyState.data.map((record) => (
+                                <div key={record.id} className="bg-black/20 p-3 rounded-lg border border-white/5 flex items-center justify-between">
+                                    <div>
+                                        <div className="font-bold text-white text-sm">{record.item_name}</div>
+                                        <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                                            <Clock className="w-3 h-3" />
+                                            {new Date(record.purchased_at.endsWith('Z') ? record.purchased_at : record.purchased_at + 'Z').toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
+                                        -{record.cost}
+                                        <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center">
+                                            <span className="text-[10px]">G</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-gray-500">
+                            No purchases recorded for this user.
+                        </div>
+                    )}
+                </div>
             </Modal>
 
         </div>

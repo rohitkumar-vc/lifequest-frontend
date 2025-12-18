@@ -74,8 +74,9 @@ const Profile = () => {
                     {user?.username?.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                    <h2 className="text-2xl font-bold text-white">{user?.username}</h2>
-                    <p className="text-gray-400">Level {user?.stats?.level} Hero</p>
+                    <h2 className="text-2xl font-bold text-white capitalize">{user?.full_name || user?.username}</h2>
+                    <p className="text-indigo-400 text-sm font-medium">@{user?.username}</p>
+                    <p className="text-gray-400 text-sm mt-1">Level {user?.stats?.level} Hero</p>
                     <div className="mt-2 flex gap-2">
                         <span className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded">Active</span>
                         {user?.role === 'admin' && <span className="bg-indigo-500/20 text-indigo-400 text-xs px-2 py-1 rounded">Admin</span>}

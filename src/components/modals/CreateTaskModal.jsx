@@ -68,10 +68,16 @@ const CreateTaskModal = ({ isOpen, onClose, defaultType = 'habit' }) => {
 
                 {/* Title */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-1">Title</label>
+                    <div className="flex justify-between items-center mb-1">
+                        <label className="block text-sm font-medium text-gray-400">Title</label>
+                        <span className={`text-xs ${title.length >= 50 ? 'text-red-400' : 'text-gray-500'}`}>
+                            {title.length}/50
+                        </span>
+                    </div>
                     <input 
                         type="text" 
                         required
+                        maxLength={50}
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         className="w-full bg-black/20 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"

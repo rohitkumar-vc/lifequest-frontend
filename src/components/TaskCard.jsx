@@ -32,7 +32,7 @@ const TaskCard = ({ task, onComplete, onDelete }) => {
                          {task.deadline && (
                             <span className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                {new Date(task.deadline).toLocaleDateString()}
+                                {new Date(task.deadline).toLocaleString([], { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </span>
                         )}
                         <span className="capitalize px-2 py-0.5 rounded bg-white/5">{task.difficulty}</span>

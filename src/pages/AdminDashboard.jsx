@@ -33,13 +33,7 @@ const AdminDashboard = () => {
     const [roleFilter, setRoleFilter] = useState('all');
     const [statusFilter, setStatusFilter] = useState('all');
 
-    // -- History Modal State --
-    const [historyState, setHistoryState] = useState({
-        isOpen: false,
-        userName: '',
-        data: [],
-        loading: false
-    });
+
 
     // ... (fetch logic)
 
@@ -59,16 +53,7 @@ const AdminDashboard = () => {
         }
     };
 
-    const fetchUserHistory = async (userId, userName) => {
-        setHistoryState({ isOpen: true, userName, data: [], loading: true });
-        try {
-            const res = await api.get(`/shop/admin/history/${userId}`);
-            setHistoryState(prev => ({ ...prev, data: res.data, loading: false }));
-        } catch (error) {
-            addToast("Failed to fetch user history", "error");
-            setHistoryState(prev => ({ ...prev, isOpen: false, loading: false }));
-        }
-    };
+
 
     // Filter Logic
     const filteredUsers = users.filter(user => {
@@ -345,13 +330,7 @@ const AdminDashboard = () => {
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
-                                                    <button 
-                                                        onClick={() => fetchUserHistory(user._id, user.username)}
-                                                        className="p-2 rounded transition-colors hover:bg-white/10 text-gray-400 hover:text-amber-400"
-                                                        title="View Purchase History"
-                                                    >
-                                                        <Receipt className="w-4 h-4" />
-                                                    </button>
+
                                                     <button 
                                                         onClick={() => onRoleClick(user._id, user.role)}
                                                         disabled={isMe}
@@ -452,42 +431,7 @@ const AdminDashboard = () => {
                  </div>
             </Modal>
 
-            {/* History Modal */}
-            <Modal
-                isOpen={historyState.isOpen}
-                onClose={() => setHistoryState(prev => ({ ...prev, isOpen: false }))}
-                title={`History: ${historyState.userName}`}
-            >
-                <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                    {historyState.loading ? (
-                        <div className="text-center py-8 text-gray-500">Loading records...</div>
-                    ) : historyState.data.length > 0 ? (
-                        <div className="space-y-3">
-                            {historyState.data.map((record) => (
-                                <div key={record.id} className="bg-black/20 p-3 rounded-lg border border-white/5 flex items-center justify-between">
-                                    <div>
-                                        <div className="font-bold text-white text-sm">{record.item_name}</div>
-                                        <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-                                            <Clock className="w-3 h-3" />
-                                            {new Date(record.purchased_at.endsWith('Z') ? record.purchased_at : record.purchased_at + 'Z').toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-amber-400 font-bold text-sm">
-                                        -{record.cost}
-                                        <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center">
-                                            <span className="text-[10px]">G</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-8 text-gray-500">
-                            No purchases recorded for this user.
-                        </div>
-                    )}
-                </div>
-            </Modal>
+
 
         </div>
     );

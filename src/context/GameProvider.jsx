@@ -98,8 +98,75 @@ export const GameProvider = ({ children }) => {
         }
     };
 
+    // --- Habits Logic ---
+    const [habits, setHabits] = useState([]);
+
+    /**
+     * Fetches all habits for the current user.
+     * Populates the `habits` state.
+     */
+    const fetchHabits = async () => {
+        if (!user) return;
+        try {
+            const response = await api.get('/habits/');
+            setHabits(response.data);
+        } catch (error) {
+            console.error("Failed to fetch habits", error);
+        }
+    };
+
+    /**
+     * Creates a new habit.
+     * @param {Object} habitData - { title, type: 'positive'|'negative', difficulty }
+     */
+    const createHabit = async (habitData) => {
+        try {
+            await api.post('/habits/', habitData);
+            await fetchHabits();
+            await refreshUser();
+            return true;
+        } catch (error) {
+            console.error("Failed to create habit", error);
+            throw error;
+        }
+    };
+
+    /**
+     * Triggers a habit action (Success/Failure).
+     * @param {string} habitId 
+     * @param {'success'|'failure'} action 
+     * @returns {Object} { habit, badge_unlocked, badge_label }
+     */
+    const triggerHabit = async (habitId, action) => {
+        try {
+            const res = await api.post(`/habits/${habitId}/trigger`, { action });
+            await fetchHabits();
+            await refreshUser();
+            return res.data; 
+        } catch (error) {
+            console.error("Failed to trigger habit", error);
+            throw error;
+        }
+    };
+
+    const deleteHabit = async (habitId) => {
+        try {
+            await api.delete(`/habits/${habitId}`);
+            await fetchHabits();
+        } catch (error) {
+            console.error("Failed to delete habit", error);
+        }
+    };
+
+    // Initial Load
+    useEffect(() => {
+        if (user) {
+            fetchHabits();
+        }
+    }, [user]);
+
     return (
-        <GameContext.Provider value={{ tasks, shopItems, fetchTasks, completeTask, toggleHabit, toggleDaily, buyItem, deleteTask, deleteShopItem }}>
+        <GameContext.Provider value={{ tasks, habits, shopItems, fetchTasks, fetchHabits, completeTask, createHabit, toggleHabit, triggerHabit, deleteHabit, toggleDaily, buyItem, deleteTask, deleteShopItem }}>
             {children}
         </GameContext.Provider>
     );

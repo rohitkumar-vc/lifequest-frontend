@@ -52,10 +52,25 @@ frontend/src/
 ### 2. Task Cards
 We use specialized cards for different task types to optimize the UX:
 - **`TaskCard.jsx` (Todos)**: Features a straightforward checkbox. Recently updated to act as a toggle button (Complete/Undo). Includes support for deadlines and difficulty badges.
-- **`HabitCard.jsx` (Habits)**: Features separate "+" and "-" buttons. 
-    - Clicking "+" triggers a positive habit (Gain XP/Gold).
-    - Clicking "-" triggers a negative habit (Lose HP).
-    - Shows current streak with a fire icon.
+### 2. Habit System ("Build vs Break")
+The frontend implements a split-view interface for the 4-state habit logic.
+
+- **`HabitsPage.jsx`**:
+    - **Split View**: Separates "Building" (Positive) and "Resisting" (Negative) habits into distinct columns.
+    - **Visuals**: Confetti celebrations for milestones, toast notifications for rewards/penalties.
+
+- **`HabitCard.jsx`**:
+    - **Dynamic Buttons**:
+        - **Positive**: "Performed" (Green) vs "Skipped" (Red).
+        - **Negative**: "Avoided" (Green) vs "Indulged" (Red).
+    - **Stats**: Shows current streak (flame icon) and best streak.
+    - **Badges**: Displays unlocked milestones (e.g., "7D").
+
+- **`CreateTaskModal.jsx`**:
+    - If "Habit" is selected, offers a toggle between "Build (+)" and "Break (-)".
+
+### 3. Other Task Components
+- **`TaskCard.jsx` (Todos)**: Features a straightforward checkbox. Recently updated to act as a toggle button (Complete/Undo). Includes support for deadlines and difficulty badges.
 - **`DailyCard.jsx` (Dailies)**:
     - Designed for recurring daily tasks.
     - Large clickable area for easy completion.

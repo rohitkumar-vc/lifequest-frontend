@@ -105,6 +105,7 @@ const Dashboard = () => {
 
     const chartOptions = {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 position: 'bottom',
@@ -184,7 +185,7 @@ const Dashboard = () => {
                             Weekly Activity
                         </h3>
                     </div>
-                    <div className="h-64">
+                    <div className="h-56 md:h-80 w-full relative">
                          <Bar options={chartOptions} data={activityData} />
                     </div>
                 </div>

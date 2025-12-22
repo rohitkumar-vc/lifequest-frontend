@@ -1,43 +1,81 @@
 import React, { useState } from 'react';
 import { useGame } from '../context/GameProvider';
-import TaskCard from '../components/TaskCard';
+import TodoCard from '../components/TodoCard';
 import CreateTaskModal from '../components/modals/CreateTaskModal';
+import RenewTodoModal from '../components/modals/RenewTodoModal';
+import { useToast } from '../components/ui/Toast';
 
 const TodosPage = () => {
-    const { tasks, completeTask, deleteTask } = useGame();
-    const [isModalOpen, setModalOpen] = useState(false);
+    const { todos, completeTodo, deleteTodo, renewalTodo } = useGame();
+    const { addToast } = useToast();
     
-    // Sort: Active first, then completed.
-    const todos = tasks
-        .filter(t => t.type === 'todo')
-        .sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
+    const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+    const [renewingTodo, setRenewingTodo] = useState(null); // Objects | null
+    
+    // Sort: Active vs Overdue vs Completed
+    const sortedTodos = [...todos].sort((a, b) => {
+        // Overdue first
+        if (a.status === 'overdue' && b.status !== 'overdue') return -1;
+        if (b.status === 'overdue' && a.status !== 'overdue') return 1;
+        
+        // Then Active
+        if (a.status === 'active' && b.status === 'completed') return -1;
+        if (b.status === 'active' && a.status === 'completed') return 1;
+        
+        // Then Date
+        return new Date(a.created_at) - new Date(b.created_at);
+    });
+
+    const handleRenew = async (todoId, newDeadline) => {
+        try {
+            await renewalTodo(todoId, newDeadline);
+            addToast("Legacy Renewed! Good luck.", "success");
+        } catch (error) {
+             addToast("Renewal failed (Need Gold?)", "error");
+        }
+    };
 
     return (
         <div className="max-w-5xl mx-auto">
             <div className="flex items-center justify-between mb-8">
                  <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">To-Dos</h1>
-                    <p className="text-gray-400">One-time tasks to get done.</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">To-Dos (Bets)</h1>
+                    <p className="text-gray-400">Complete quickly to keep the Gold!</p>
                 </div>
                 <button 
-                   onClick={() => setModalOpen(true)}
+                   onClick={() => setCreateModalOpen(true)}
                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
                >
-                   + Add To-Do
+                   + Place Bet
                </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {todos.map(todo => (
-                     <TaskCard key={todo._id} task={todo} onComplete={completeTask} onDelete={deleteTask} />
+                {sortedTodos.map(todo => (
+                     <TodoCard 
+                        key={todo._id} 
+                        todo={todo} 
+                        onComplete={completeTodo} 
+                        onDelete={deleteTodo}
+                        onRenew={(t) => setRenewingTodo(t)} 
+                    />
                 ))}
-                 {todos.length === 0 && (
+                 {sortedTodos.length === 0 && (
                      <div className="col-span-full py-12 text-center text-gray-500 bg-white/5 rounded-xl border border-white/5 border-dashed">
-                        You are all caught up!
+                        No active bets. Start one!
                      </div>
                 )}
             </div>
-            <CreateTaskModal isOpen={isModalOpen} onClose={() => setModalOpen(false)} defaultType="todo" />
+            
+            {/* Modals */}
+            <CreateTaskModal isOpen={isCreateModalOpen} onClose={() => setCreateModalOpen(false)} defaultType="todo" />
+            
+            <RenewTodoModal 
+                isOpen={!!renewingTodo} 
+                onClose={() => setRenewingTodo(null)} 
+                todo={renewingTodo}
+                onRenew={handleRenew}
+            />
         </div>
     );
 };

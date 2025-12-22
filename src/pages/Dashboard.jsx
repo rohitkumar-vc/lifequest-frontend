@@ -34,7 +34,7 @@ ChartJS.register(
 
 const Dashboard = () => {
     const { user } = useAuth();
-    const { tasks } = useGame();
+    const { tasks, todos, habits } = useGame(); // Get data from context
     
     // Analytics State
     const [weeklyData, setWeeklyData] = useState([]);
@@ -57,23 +57,24 @@ const Dashboard = () => {
              }
         };
         fetchAnalytics();
-    }, [tasks]); // Refresh when tasks change (completion triggers log)
+    }, [tasks, todos]); // Refresh when tasks or todos change
 
     // Stats
-    const habits = tasks.filter(t => t.type === 'habit');
     const dailies = tasks.filter(t => t.type === 'daily');
-    const todos = tasks.filter(t => t.type === 'todo');
     
-    const completedTodos = todos.filter(t => t.status === 'completed').length;
-    const activeTodos = todos.length - completedTodos;
+    const countCompletedTodos = todos.filter(t => t.status === 'completed').length;
+    const countActiveTodos = todos.length - countCompletedTodos;
 
     // --- Graph Data (Real) ---
+    const realHabits = habits; 
+    const realDailies = dailies;
+    
     
     const distributionData = {
-        labels: ['Habits', 'Dailies', 'To-Dos'],
+        labels: ['Habits', 'Dailies', 'To-Dos (Bets)'],
         datasets: [
             {
-                data: [habits.length, dailies.length, todos.length],
+                data: [realHabits.length, realDailies.length, todos.length],
                 backgroundColor: [
                     'rgba(249, 115, 22, 0.6)', 
                     'rgba(59, 130, 246, 0.6)', 
@@ -147,7 +148,7 @@ const Dashboard = () => {
                             <Flame className="w-6 h-6 text-orange-500" />
                         </div>
                         <h3 className="text-lg font-bold text-white">Habits</h3>
-                        <p className="text-sm text-gray-500">{habits.length} Active</p>
+                        <p className="text-sm text-gray-500">{realHabits.length} Active</p>
                     </div>
                     <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
                 </Link>
@@ -158,7 +159,7 @@ const Dashboard = () => {
                             <Repeat className="w-6 h-6 text-blue-500" />
                         </div>
                         <h3 className="text-lg font-bold text-white">Dailies</h3>
-                         <p className="text-sm text-gray-500">{dailies.length} Active</p>
+                         <p className="text-sm text-gray-500">{realDailies.length} Active</p>
                     </div>
                     <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
                 </Link>
@@ -169,7 +170,7 @@ const Dashboard = () => {
                             <CheckSquare className="w-6 h-6 text-green-500" />
                         </div>
                         <h3 className="text-lg font-bold text-white">To-Dos</h3>
-                         <p className="text-sm text-gray-500">{activeTodos} Pending</p>
+                         <p className="text-sm text-gray-500">{countActiveTodos} Pending</p>
                     </div>
                     <ArrowRight className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" />
                 </Link>

@@ -11,6 +11,7 @@ The LifeQuest frontend is a modern, responsive Single Page Application (SPA) bui
 - **Animations**: Framer Motion
 - **HTTP Client**: Axios
 - **Routing**: React Router DOM
+- **Charts**: Chart.js (via `react-chartjs-2`) for Analytics
 
 ## Project Structure
 ```
@@ -18,79 +19,64 @@ frontend/src/
 ├── api/                # API configuration
 │   └── axios.js        # Axios instance with Interceptors (Auto-token refresh)
 ├── components/         # Reusable UI components
-│   ├── modals/         # CreateTask, etc.
+│   ├── modals/         # CreateTask, RenewTodoModal, etc.
 │   ├── ui/             # Generic UI (Modal, Toast, Button)
 │   ├── Layout.jsx      # Main application wrapper (Sidebar + Content)
 │   ├── StatsBar.jsx    # Header showing HP, XP, Gold, Level
-│   ├── TaskCard.jsx    # Component for Todos
+│   ├── TodoCard.jsx    # Smart "Betting" Card for Todos (Active/Overdue)
 │   ├── HabitCard.jsx   # Component for Habits (+/- buttons)
-│   ├── DailyCard.jsx   # Component for Dailies (Checkbox)
-│   └── TaskColumn.jsx  # Vertical list container for tasks
+│   ├── DailyCard.jsx   # Legacy Daily Tasks
+│   └── TaskColumn.jsx  # Vertical list container
 ├── context/            # React Context for Global State
-│   └── AuthProvider.jsx # Handles Login, Registration, Token storage
+│   └── GameProvider.jsx # Global Game Data (Todos, Habits, User Stats)
+│   └── AuthProvider.jsx # Login/Auth state
 ├── pages/              # Main Route Views
-│   ├── Login.jsx       # Authentication entry point
-│   ├── Dashboard.jsx   # Overview of all active quests
-│   ├── HabitsPage.jsx  # Dedicated habits management
-│   ├── DailiesPage.jsx # Dedicated dailies management
-│   ├── Profile.jsx     # User settings and Stats details
-│   ├── ShopPage.jsx    # Item purchase interface
-│   └── AdminDashboard.jsx # Admin tools (Invite users, Add items)
-├── App.jsx             # Main Router configuration
-└── main.jsx            # Entry point
+│   ├── Login.jsx       # Auth
+│   ├── Dashboard.jsx   # Analytics + Quick Links
+│   ├── TodosPage.jsx   # dedicated "Betting Board" for Todos
+│   ├── HabitsPage.jsx  # Habit Tracker
+│   └── ShopPage.jsx    # Item Store
+├── App.jsx             # Router
+└── main.jsx            # Entry
 ```
 
 ## Key Components & Logic
 
 ### 1. StatsBar (`components/StatsBar.jsx`)
-- **Purpose**: A persistent HUD (Heads Up Display) showing the user's game status.
-- **Logic**: 
-    - Displays XP as a percentage relative to the *current level's max XP*.
-    - Visualizes HP and Gold.
-    - Updates automatically whenever the global `user` state changes (driven by the `AuthProvider` or local updates after task completion).
+- Persistent HUD showing Game Status.
+- Visualizes real-time Gold/XP updates from actions.
 
-### 2. Task Cards
-We use specialized cards for different task types to optimize the UX:
-- **`TaskCard.jsx` (Todos)**: Features a straightforward checkbox. Recently updated to act as a toggle button (Complete/Undo). Includes support for deadlines and difficulty badges.
-### 2. Habit System ("Build vs Break")
-The frontend implements a split-view interface for the 4-state habit logic.
+### 2. Todo System ("Productivity Betting")
+The frontend visualizes the "Bet" nature of the new backend.
 
-- **`HabitsPage.jsx`**:
-    - **Split View**: Separates "Building" (Positive) and "Resisting" (Negative) habits into distinct columns.
-    - **Visuals**: Confetti celebrations for milestones, toast notifications for rewards/penalties.
+- **`TodoCard.jsx`**:
+    - **Active**: Shows Deadline and "Bet X Gold".
+    - **Overdue**: Turns Red. Shows "Penalty Applied". Displays a **"Renew"** button.
+    - **Completed**: Turns Green. Shows success state.
+    - **Timezone**: All deadlines are automatically formatted to **IST (Asia/Kolkata)**.
 
-- **`HabitCard.jsx`**:
-    - **Dynamic Buttons**:
-        - **Positive**: "Performed" (Green) vs "Skipped" (Red).
-        - **Negative**: "Avoided" (Green) vs "Indulged" (Red).
-    - **Stats**: Shows current streak (flame icon) and best streak.
-    - **Badges**: Displays unlocked milestones (e.g., "7D").
+- **`RenewTodoModal.jsx`**:
+    - Pops up when clicking "Renew" on an overdue card.
+    - Asks user to confirm the 10% fee and pick a new deadline.
 
 - **`CreateTaskModal.jsx`**:
-    - If "Habit" is selected, offers a toggle between "Build (+)" and "Break (-)".
+    - **Dynamic Fields**: Changes based on type (Habit vs Todo vs Daily).
+    - **Gold Warning**: If a user sets a deadline, a warning appears explaining the "Loan/Bet" mechanics (Upfront Gold vs Double Penalty).
 
-### 3. Other Task Components
-- **`TaskCard.jsx` (Todos)**: Features a straightforward checkbox. Recently updated to act as a toggle button (Complete/Undo). Includes support for deadlines and difficulty badges.
-- **`DailyCard.jsx` (Dailies)**:
-    - Designed for recurring daily tasks.
-    - Large clickable area for easy completion.
-    - Visual feedback for "Done" state.
+### 3. Habit System
+- **`HabitsPage.jsx`**: Split view for "Build" vs "Break".
+- **`HabitCard.jsx`**: Interactive +/– buttons with streak flames.
 
-### 3. Admin Dashboard (`pages/AdminDashboard.jsx`)
-- Restricted access route (only for users with `role: "admin"`).
-- **User Management**: Allows inviting new users by Name and Email. Triggers backend registration flow.
-- **Shop Management**: Provides a form to create new items (Potions, Gear) that appear in the global shop for all users.
+### 4. Dashboard & Analytics
+- **`Dashboard.jsx`**:
+    - Uses `Chart.js` to visualize Weekly Activity (Bar Chart) and Task Distribution (Doughnut).
+    - Displays "Captain's Log" (Recent activity history).
+    - Connects to the new Context to distinguish between Habits, Dailies, and Todos.
 
-### 4. Interactive Feedback
-- **Toasts**: Used globally (`components/ui/Toast.jsx`) to provide instant feedback for actions (e.g., "Gold Earned!", "Level Up!", "Error: Invalid Password").
-- **Framer Motion**: Used for page transitions and card entry animations, making the app feel "alive" and game-like.
-
-### 5. Authentication Flow (`context/AuthProvider.jsx`)
-- On load, checks for a stored Access Token.
-- **Axios Interceptor**:
-    - Attaches the Access Token to every request.
-    - If a request fails with 401 (Unauthorized), it automatically attempts to use the Refresh Token to get a new Access Token and retries the original request.
-    - If refresh fails, it redirects the user to `/login`.
+### 5. Global State Management (`GameProvider.jsx`)
+- Centralizes all data fetching: `fetchTodos`, `fetchHabits`, `createTodo`, `renewTodo`, etc.
+- Ensures distinct arrays for `todos` (New System) and `tasks` (Legacy/Dailies).
+- Auto-refreshes user stats (Gold/XP) after every action to keep the HUD in sync.
 
 ## Setup & Running
 

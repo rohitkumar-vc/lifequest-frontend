@@ -100,6 +100,66 @@ export const GameProvider = ({ children }) => {
 
     // --- Habits Logic ---
     const [habits, setHabits] = useState([]);
+    
+    // --- Todos Logic (Refactored) ---
+    const [todos, setTodos] = useState([]);
+
+    const fetchTodos = async () => {
+        if (!user) return;
+        try {
+            const response = await api.get('/todos/');
+            setTodos(response.data);
+        } catch (error) {
+           console.error("Failed to fetch todos", error);
+        }
+    };
+
+    const createTodo = async (todoData) => {
+        try {
+            await api.post('/todos/', todoData);
+            await fetchTodos();
+            await refreshUser();
+            return true;
+        } catch (error) {
+            console.error("Failed to create todo", error);
+            throw error;
+        }
+    };
+
+    const completeTodo = async (todoId) => {
+        try {
+            await api.post(`/todos/${todoId}/complete`);
+            await fetchTodos();
+            await refreshUser();
+        } catch (error) {
+             console.error("Failed to complete todo", error);
+             throw error;
+        }
+    };
+
+    const deleteTodo = async (todoId) => {
+        try {
+             await api.delete(`/todos/${todoId}`);
+             await fetchTodos();
+             await refreshUser();
+        } catch (error) {
+             console.error("Failed to delete todo", error);
+             throw error;
+        }
+    };
+
+    const renewalTodo = async (todoId, newDeadline) => {
+        try {
+             await api.post(`/todos/${todoId}/renew`, { deadline: newDeadline });
+             await fetchTodos();
+             await refreshUser();
+        } catch (error) {
+             console.error("Failed to renew todo", error);
+             throw error;
+        }
+    };
+
+
 
     /**
      * Fetches all habits for the current user.
@@ -161,12 +221,20 @@ export const GameProvider = ({ children }) => {
     // Initial Load
     useEffect(() => {
         if (user) {
+            fetchTasks();
             fetchHabits();
+            fetchTodos();
+            fetchShop(); // Ensure Shop is fetched 
         }
     }, [user]);
 
     return (
-        <GameContext.Provider value={{ tasks, habits, shopItems, fetchTasks, fetchHabits, completeTask, createHabit, toggleHabit, triggerHabit, deleteHabit, toggleDaily, buyItem, deleteTask, deleteShopItem }}>
+        <GameContext.Provider value={{
+             tasks, habits, shopItems, todos,
+             fetchTasks, fetchHabits, fetchTodos,
+             completeTask, createHabit, toggleHabit, triggerHabit, deleteHabit, toggleDaily, buyItem, deleteTask, deleteShopItem,
+             createTodo, completeTodo, deleteTodo, renewalTodo
+        }}>
             {children}
         </GameContext.Provider>
     );

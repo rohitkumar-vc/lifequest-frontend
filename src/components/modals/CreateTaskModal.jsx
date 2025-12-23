@@ -7,7 +7,7 @@ import api from '../../api/axios';
 import { Shield, Sword } from 'lucide-react';
 
 const CreateTaskModal = ({ isOpen, onClose, defaultType = 'habit' }) => {
-    const { fetchTasks, createHabit } = useGame(); // Use context actions
+    const { fetchTasks, createHabit, createTodo } = useGame(); // Use context actions
     const { refreshUser } = useAuth();
     const { addToast } = useToast();
     
@@ -15,7 +15,7 @@ const CreateTaskModal = ({ isOpen, onClose, defaultType = 'habit' }) => {
     const [type, setType] = useState(defaultType);
     const [difficulty, setDifficulty] = useState('medium');
     const [deadline, setDeadline] = useState('');
-    const [habitDirection, setHabitDirection] = useState('positive'); // 'positive' | 'negative'
+    const [habitDirection, setHabitDirection] = useState('positive');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
@@ -23,26 +23,33 @@ const CreateTaskModal = ({ isOpen, onClose, defaultType = 'habit' }) => {
         setLoading(true);
         try {
             if (type === 'habit') {
-                // --- CREATE HABIT ---
                 await createHabit({
                     title,
-                    type: habitDirection, // 'positive' or 'negative'
+                    type: habitDirection,
                     difficulty
                 });
                 addToast("Habit created successfully!", "success");
+            } else if (type === 'todo') {
+                 // --- CREATE TODO (New Logic) ---
+                 await createTodo({
+                     title,
+                     description: "",
+                     difficulty,
+                     deadline: deadline ? new Date(deadline).toISOString() : null
+                 });
+                 addToast("Todo created! Gold Bet placed.", "success");
             } else {
-                // --- CREATE TASK (Daily/Todo) ---
+                // --- CREATE DAILY (Legacy/Generic) ---
                 const payload = {
                     title,
                     type,
                     difficulty,
-                    deadline: type === 'todo' && deadline ? new Date(deadline).toISOString() : null,
                     user_id: "me" 
                 };
                 await api.post('/tasks/', payload);
                 await fetchTasks();
                 await refreshUser();
-                addToast(`${type.charAt(0).toUpperCase() + type.slice(1)} created successfully!`, 'success');
+                addToast(`Daily created successfully!`, 'success');
             }
 
             // Reset and Close
@@ -52,7 +59,7 @@ const CreateTaskModal = ({ isOpen, onClose, defaultType = 'habit' }) => {
             onClose();
         } catch (error) {
             console.error(error);
-            addToast('Failed to create task', 'error');
+            addToast('Failed to create item', 'error');
         } finally {
             setLoading(false);
         }
@@ -143,7 +150,13 @@ const CreateTaskModal = ({ isOpen, onClose, defaultType = 'habit' }) => {
                             onChange={(e) => setDeadline(e.target.value)}
                             className="w-full bg-black/20 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
                         />
-                         <p className="text-xs text-gray-500 mt-1">Set a deadline to get Upfront Gold!</p>
+                         {deadline ? (
+                             <div className="mt-2 text-xs bg-yellow-500/10 text-yellow-500 p-2 rounded border border-yellow-500/20">
+                                 ⚠️ <strong>Gold Bet Active:</strong> You get paid upfront. If you miss this deadline, you pay back DOUBLE!
+                             </div>
+                         ) : (
+                             <p className="text-xs text-gray-500 mt-1">Set a deadline to get Upfront Gold (take a bet)!</p>
+                         )}
                     </div>
                 )}
 

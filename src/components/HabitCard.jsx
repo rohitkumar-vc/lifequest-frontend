@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Flame, Trash2, Check, X, Shield, Sword, Award } from 'lucide-react';
+import { Flame, Trash2, Check, X, Shield, Sword, Award, Loader2 } from 'lucide-react';
 import { useGame } from '../context/GameProvider';
 import { useToast } from './ui/Toast';
 
 const HabitCard = ({ habit, onDelete }) => {
     const { triggerHabit } = useGame();
     const { addToast } = useToast();
+    const [loadingAction, setLoadingAction] = useState(null);
     
     // Check if done today (basic check using last_completed_date)
     // Note: This is an optimistic check. The backend has robust logic.
@@ -17,10 +18,12 @@ const HabitCard = ({ habit, onDelete }) => {
     const isPositive = habit.type === 'positive';
 
     const handleAction = async (action) => {
-        if (isDoneToday) {
-            addToast("Already logged today!", "info");
+        if (isDoneToday || loadingAction) {
+            if (isDoneToday) addToast("Already logged today!", "info");
             return;
         }
+        
+        setLoadingAction(action);
         try {
             const res = await triggerHabit(habit._id, action);
             // res = { habit, badge_unlocked, badge_label }
@@ -33,6 +36,8 @@ const HabitCard = ({ habit, onDelete }) => {
             }
         } catch (err) {
             // Error handled in provider
+        } finally {
+            setLoadingAction(null);
         }
     };
 
@@ -102,22 +107,32 @@ const HabitCard = ({ habit, onDelete }) => {
                         {/* Success Button */}
                         <button
                             onClick={() => handleAction('success')}
-                            className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all
+                            disabled={loadingAction !== null}
+                            className={`flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed
                                 ${isPositive 
                                     ? 'bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white' 
                                     : 'bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white'}
                             `}
                         >
-                            <Check className="w-4 h-4" />
+                            {loadingAction === 'success' ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Check className="w-4 h-4" />
+                            )}
                             {isPositive ? 'Performed' : 'Avoided'}
                         </button>
 
                         {/* Failure Button */}
                         <button
                             onClick={() => handleAction('failure')}
-                            className="flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white"
+                            disabled={loadingAction !== null}
+                            className="flex items-center justify-center gap-2 py-2 rounded-lg font-bold transition-all bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <X className="w-4 h-4" />
+                            {loadingAction === 'failure' ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <X className="w-4 h-4" />
+                            )}
                             {isPositive ? 'Skipped' : 'Indulged'}
                         </button>
                     </>
